@@ -1,661 +1,624 @@
+// script.js
 // SISTEMA DE GESTIÓN DE TAREAS - CRUD COMPLETO
 // Autores: Karol Nicolle Torres Fuentes, Juan Sebastian Patiño Hernandez
 // Fecha: 17-02-2026
 // Institución: SENA - Técnico en Programación de Software
-// Descripción: Implementación completa de CRUD (Create, Read, Update, Delete) con API RESTful
+// Descripción: Punto de entrada principal. Importa todos los módulos desde el barril.
 
-// 1. CONFIGURACIÓN DE LA API
-// Definimos la URL base del servidor JSON que está corriendo en el puerto 3000
-const API_URL = 'http://localhost:3000';
+// SECCIÓN 0: IMPORTACIONES (ES Modules)
 
-// 2. SELECCIÓN DE ELEMENTOS DEL DOM
-// Seleccionamos el formulario de búsqueda de usuario por su ID
+// 'import' es la palabra clave de ES Modules para traer funciones desde otro archivo.
+import {
+    // Función que muestra un mensaje verde de éxito en pantalla durante 3 segundos
+    showSuccessMessage,
+
+    // Función que muestra un mensaje rojo de error en pantalla durante 5 segundos
+    showErrorMessage,
+
+    // Función que consulta la API buscando un usuario por su número de documento
+    searchUserByDocument,
+
+    // Función que consulta la API y retorna todas las tareas de un usuario
+    getUserTasks,
+
+    // Función que hace POST a la API para crear una nueva tarea
+    createTask,
+
+    // Función que hace PUT a la API para actualizar una tarea existente
+    updateTask,
+
+    // Función que hace DELETE a la API para eliminar una tarea
+    deleteTask
+} from './modulos/barril.js';
+
+
+// SECCIÓN 1: SELECCIÓN DE ELEMENTOS DEL DOM
+
+// document.getElementById('id') busca en el HTML el elemento que tenga ese id=""
+// y lo guarda en una constante para poder manipularlo después con JavaScript.
+// Se usa 'const' porque estos elementos no cambian (siempre apuntan al mismo nodo del DOM).
+
+// Formulario de búsqueda de usuario 
+
+// El formulario completo con el botón "Buscar usuario"
 const searchUserForm = document.getElementById('searchUserForm');
-// Seleccionamos el input donde el usuario ingresará el número de documento
+
+// El campo <input> donde el usuario escribe el número de documento
 const documentNumberInput = document.getElementById('documentNumber');
 
-// Seleccionamos la sección donde se mostrarán los datos del usuario encontrado
+// Sección de datos del usuario
+
+// El <div> o <section> que contiene la tarjeta con los datos del usuario encontrado
 const userDataSection = document.getElementById('userDataSection');
-// Seleccionamos los spans donde mostraremos ID, nombre y email del usuario
+
+// <span> donde se muestra el documento (ID) del usuario
 const userIdSpan = document.getElementById('userId');
+
+// <span> donde se muestra el nombre del usuario
 const userNameSpan = document.getElementById('userName');
+
+// <span> donde se muestra el correo electrónico del usuario
 const userEmailSpan = document.getElementById('userEmail');
 
-// Seleccionamos la sección del formulario para crear tareas
+// Formulario de creación de tareas
+
+// El <div> o <section> que envuelve todo el formulario de crear tarea
 const createTaskSection = document.getElementById('createTaskSection');
-// Seleccionamos el formulario completo de creación de tareas
+
+// El <form> de creación de tareas (usado para hacer .reset() y escuchar 'submit')
 const createTaskForm = document.getElementById('createTaskForm');
-// Seleccionamos cada campo del formulario de creación
+
+// <input type="text"> donde se escribe el título de la tarea
 const taskTitleInput = document.getElementById('taskTitle');
+
+// <textarea> donde se escribe la descripción de la tarea
 const taskDescriptionInput = document.getElementById('taskDescription');
+
+// <select> con las opciones de estado (ej: pendiente, en progreso, completada)
 const taskStatusSelect = document.getElementById('taskStatus');
 
-// Seleccionamos la sección del formulario para editar tareas
+// Formulario de edición de tareas
+
+// El <div> o <section> que envuelve todo el formulario de editar tarea
 const editTaskSection = document.getElementById('editTaskSection');
-// Seleccionamos el formulario completo de edición de tareas
+
+// El <form> de edición (escucha el evento 'submit' para guardar cambios)
 const editTaskForm = document.getElementById('editTaskForm');
-// Seleccionamos el campo oculto que guardará el ID de la tarea a editar
+
+// <input type="hidden"> que guarda el ID de la tarea que se está editando.
+// Es invisible para el usuario pero lo necesitamos para saber qué tarea actualizar.
 const editTaskIdInput = document.getElementById('editTaskId');
-// Seleccionamos cada campo del formulario de edición
+
+// <input type="text"> para editar el título de la tarea
 const editTaskTitleInput = document.getElementById('editTaskTitle');
+
+// <textarea> para editar la descripción de la tarea
 const editTaskDescriptionInput = document.getElementById('editTaskDescription');
+
+// <select> para cambiar el estado de la tarea
 const editTaskStatusSelect = document.getElementById('editTaskStatus');
-// Seleccionamos el botón de cancelar edición
+
+// Botón "Cancelar" dentro del formulario de edición
 const cancelEditBtn = document.getElementById('cancelEdit');
 
-// Seleccionamos la sección donde se mostrará la lista de tareas
+// Sección de lista de tareas
+
+// El <div> o <section> que contiene la tabla con todas las tareas
 const tasksListSection = document.getElementById('tasksListSection');
-// Seleccionamos el tbody de la tabla donde insertaremos las filas de tareas dinámicamente
+
+// El <tbody> de la tabla donde se insertan dinámicamente las filas de tareas
 const tasksTableBody = document.getElementById('tasksTableBody');
 
-// Seleccionamos el elemento div donde mostraremos mensajes de éxito o error
-const messageDiv = document.getElementById('message');
 
-// 3. VARIABLES GLOBALES DE ESTADO
-// Variable que almacenará los datos del usuario actualmente seleccionado
-let currentUser = null;
-// Array que almacenará todas las tareas del usuario actual
+// SECCIÓN 2: VARIABLES GLOBALES DE ESTADO
+
+// Se usa 'let' (no 'const') porque estos valores cambian durante el uso de la app.
+// Son "globales" porque están fuera de cualquier función,
+// lo que permite que todas las funciones del archivo las lean y modifiquen.
+
+// Almacena el objeto del usuario que se está consultando en este momento.
+// Empieza en null (ningún usuario seleccionado).
+let currentUser  = null;
+
+// Array con las tareas que pertenecen únicamente al usuario actual (currentUser).
+// Se reemplaza cada vez que se carga un nuevo usuario.
 let currentTasks = [];
-// Array acumulado con tareas de todos los usuarios consultados (no se borra al cambiar usuario)
+
+// Array ACUMULADO con tareas de TODOS los usuarios consultados en la sesión.
+// A diferencia de currentTasks, este nunca se vacía al cambiar de usuario;
+// solo crece cuando se consulta un usuario nuevo, y se reduce cuando se elimina una tarea.
 let allTasks = [];
 
-// 4. FUNCIONES DE UTILIDAD PARA MENSAJES
-// Función para mostrar mensajes de éxito al usuario
-// Parámetro: text - El texto del mensaje a mostrar
-function showSuccessMessage(text) {
-    // Asignamos el texto del mensaje al div
-    messageDiv.textContent = text;
-    // Removemos la clase 'error' si existiera
-    messageDiv.classList.remove('error');
-    // Agregamos la clase 'success' para aplicar estilos de éxito
-    messageDiv.classList.add('success');
-    // Hacemos visible el mensaje cambiando el display
-    messageDiv.style.display = 'block';
-    // Configuramos un temporizador para ocultar el mensaje después de 3 segundos
-    setTimeout(() => {
-        messageDiv.style.display = 'none';
-    }, 3000);
-}
 
-// Función para mostrar mensajes de error al usuario
-// Parámetro: text - El texto del mensaje de error a mostrar
-function showErrorMessage(text) {
-    // Asignamos el texto del error al div
-    messageDiv.textContent = text;
-    // Removemos la clase 'success' si existiera
-    messageDiv.classList.remove('success');
-    // Agregamos la clase 'error' para aplicar estilos de error
-    messageDiv.classList.add('error');
-    // Hacemos visible el mensaje cambiando el display
-    messageDiv.style.display = 'block';
-    // Configuramos un temporizador para ocultar el mensaje después de 5 segundos (más tiempo para errores)
-    setTimeout(() => {
-        messageDiv.style.display = 'none';
-    }, 5000);
-}
+// SECCIÓN 3: FUNCIONES DE MANIPULACIÓN DEL DOM - USUARIO
 
-// 5. FUNCIONES DE BÚSQUEDA DE USUARIO
-// Función asíncrona para buscar un usuario por su documento en la API
-// Parámetro: documento - Número de documento del usuario a buscar
-// Retorna: Objeto con los datos del usuario o null si no se encuentra
-async function searchUserByDocument(documento) {
-    try {
-        // Construimos la URL completa para hacer la petición GET a /users
-        const url = `${API_URL}/users`;
-        // Realizamos la petición HTTP GET usando fetch
-        // await pausa la ejecución hasta que la promesa se resuelva
-        const response = await fetch(url);
-        
-        // Verificamos si la respuesta fue exitosa (código 200-299)
-        if (!response.ok) {
-            // Si hay error, lanzamos una excepción con el mensaje
-            throw new Error('Error al consultar usuarios');
-        }
-        
-        // Convertimos la respuesta JSON a un array de JavaScript
-        const users = await response.json();
-        
-        // Buscamos el usuario cuyo documento coincida con el buscado
-        // Convertimos ambos a string para comparar correctamente
-        const user = users.find(u => u.documento.toString() === documento.toString());
-        
-        // Retornamos el usuario encontrado o null si no existe
-        return user || null;
-        
-    } catch (error) {
-        // Si ocurre cualquier error (red, servidor, etc.) lo mostramos en consola
-        console.error('Error en búsqueda de usuario:', error);
-        // Mostramos mensaje de error al usuario
-        showErrorMessage('Error al buscar usuario. Verifica que el servidor esté corriendo.');
-        // Retornamos null para indicar que falló la búsqueda
-        return null;
-    }
-}
-
-// Función para mostrar los datos del usuario en la interfaz
-// Parámetro: user - Objeto con los datos del usuario (documento, nombre, correo)
+// Función que recibe un objeto 'user' y lo pinta en la interfaz
 function displayUserData(user) {
-    // Insertamos el documento del usuario en el span correspondiente
+
+    // Escribe el número de documento del usuario dentro del <span id="userId">
     userIdSpan.textContent = user.documento;
-    // Insertamos el nombre del usuario en el span correspondiente
+
+    // Escribe el nombre del usuario dentro del <span id="userName">
     userNameSpan.textContent = user.nombre;
-    // Insertamos el correo del usuario en el span correspondiente
+
+    // Escribe el correo del usuario dentro del <span id="userEmail">
     userEmailSpan.textContent = user.correo;
-    
-    // Hacemos visible la sección de datos del usuario
+
+    // Hace visible la tarjeta de datos del usuario (estaba oculta con display:none)
     userDataSection.style.display = 'block';
-    // Hacemos visible la sección del formulario de creación de tareas
+
+    // Hace visible el formulario de crear tareas para este usuario
     createTaskSection.style.display = 'block';
 }
 
-// Función para ocultar los datos del usuario y resetear la interfaz
+// Función que oculta la información del usuario y resetea la vista
 function hideUserData() {
-    // Ocultamos la sección de datos del usuario
+
+    // Oculta la tarjeta con los datos del usuario
     userDataSection.style.display = 'none';
-    // Ocultamos la sección del formulario de creación de tareas
+
+    // Oculta el formulario de creación de tareas
     createTaskSection.style.display = 'none';
-    // Ocultamos la sección del formulario de edición de tareas
+
+    // Oculta el formulario de edición de tareas
     editTaskSection.style.display = 'none';
-    // Ocultamos la lista de tareas
+
+    // Oculta la tabla con la lista de tareas
     tasksListSection.style.display = 'none';
-    
-    // Limpiamos los valores de los spans
+
+    // Limpia el texto del <span> de documento (queda vacío)
     userIdSpan.textContent = '';
+
+    // Limpia el texto del <span> de nombre
     userNameSpan.textContent = '';
+
+    // Limpia el texto del <span> de correo
     userEmailSpan.textContent = '';
 }
 
-// 6. FUNCIONES CRUD PARA TAREAS
-// Función asíncrona para obtener todas las tareas de un usuario específico (READ)
-// Parámetro: userDocumento - Documento del usuario cuyas tareas queremos obtener
-// Retorna: Array con las tareas del usuario
-async function getUserTasks(userDocumento) {
-    try {
-        // Construimos la URL para obtener todas las tareas con filtro por usuario
-        const url = `${API_URL}/tasks?userDocumento=${userDocumento}`;
-        // Realizamos la petición GET
-        const response = await fetch(url);
-        
-        // Verificamos si la respuesta fue exitosa
-        if (!response.ok) {
-            throw new Error('Error al obtener tareas');
-        }
-        
-        // Convertimos la respuesta JSON a un array de tareas
-        const tasks = await response.json();
-        // Retornamos el array de tareas
-        return tasks;
-        
-    } catch (error) {
-        // Capturamos y mostramos cualquier error
-        console.error('Error al obtener tareas:', error);
-        showErrorMessage('Error al cargar las tareas');
-        // Retornamos array vacío en caso de error
-        return [];
-    }
-}
 
-// Función asíncrona para crear una nueva tarea en la API (CREATE)
-// Parámetro: taskData - Objeto con los datos de la tarea a crear
-// Retorna: Objeto con la tarea creada (incluyendo su ID generado) o null si falla
-async function createTask(taskData) {
-    try {
-        // Construimos la URL para el endpoint de tareas
-        const url = `${API_URL}/tasks`;
-        
-        // Configuramos las opciones de la petición POST
-        const options = {
-            method: 'POST', // Método HTTP para crear recursos
-            headers: {
-                'Content-Type': 'application/json' // Indicamos que enviamos JSON
-            },
-            body: JSON.stringify(taskData) // Convertimos el objeto a string JSON
-        };
-        
-        // Realizamos la petición POST con las opciones configuradas
-        const response = await fetch(url, options);
-        
-        // Verificamos si la creación fue exitosa
-        if (!response.ok) {
-            throw new Error('Error al crear tarea');
-        }
-        
-        // Convertimos la respuesta a objeto JavaScript
-        // El servidor retorna la tarea creada con su ID asignado
-        const createdTask = await response.json();
-        
-        // Retornamos la tarea creada
-        return createdTask;
-        
-    } catch (error) {
-        // Capturamos y mostramos el error
-        console.error('Error al crear tarea:', error);
-        showErrorMessage('Error al registrar la tarea');
-        // Retornamos null para indicar fallo
-        return null;
-    }
-}
+// SECCIÓN 4: FUNCIONES DE MANIPULACIÓN DEL DOM - TAREAS
 
-// Función asíncrona para actualizar una tarea existente (UPDATE)
-// Parámetros: taskId - ID de la tarea a actualizar
-//             taskData - Objeto con los nuevos datos de la tarea
-// Retorna: Objeto con la tarea actualizada o null si falla
-async function updateTask(taskId, taskData) {
-    try {
-        // Construimos la URL incluyendo el ID de la tarea específica
-        const url = `${API_URL}/tasks/${taskId}`;
-        
-        // Configuramos las opciones de la petición PUT
-        const options = {
-            method: 'PUT', // PUT actualiza el recurso completo
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(taskData) // Convertimos los datos a JSON
-        };
-        
-        // Realizamos la petición PUT
-        const response = await fetch(url, options);
-        
-        // Verificamos si la actualización fue exitosa
-        if (!response.ok) {
-            throw new Error('Error al actualizar tarea');
-        }
-        
-        // Obtenemos la tarea actualizada desde la respuesta
-        const updatedTask = await response.json();
-        
-        // Retornamos la tarea actualizada
-        return updatedTask;
-        
-    } catch (error) {
-        // Capturamos y mostramos el error
-        console.error('Error al actualizar tarea:', error);
-        showErrorMessage('Error al actualizar la tarea');
-        // Retornamos null para indicar fallo
-        return null;
-    }
-}
-
-// Función asíncrona para eliminar una tarea (DELETE)
-// Parámetro: taskId - ID de la tarea a eliminar
-// Retorna: true si se eliminó correctamente, false si falló
-async function deleteTask(taskId) {
-    try {
-        // Construimos la URL incluyendo el ID de la tarea a eliminar
-        const url = `${API_URL}/tasks/${taskId}`;
-        
-        // Configuramos las opciones de la petición DELETE
-        const options = {
-            method: 'DELETE' // DELETE elimina el recurso
-        };
-        
-        // Realizamos la petición DELETE
-        const response = await fetch(url, options);
-        
-        // Verificamos si la eliminación fue exitosa
-        if (!response.ok) {
-            throw new Error('Error al eliminar tarea');
-        }
-        
-        // Retornamos true para indicar éxito
-        return true;
-        
-    } catch (error) {
-        // Capturamos y mostramos el error
-        console.error('Error al eliminar tarea:', error);
-        showErrorMessage('Error al eliminar la tarea');
-        // Retornamos false para indicar fallo
-        return false;
-    }
-}
-
-// 7. FUNCIONES DE MANIPULACIÓN DEL DOM PARA TAREAS
-// Función para mostrar todas las tareas en la tabla del DOM
-// Parámetro: tasks - Array de tareas a mostrar
+// Función que recibe un array de tareas y construye la tabla HTML dinámicamente
 function displayTasks(tasks) {
-    // Limpiamos el contenido actual del tbody (eliminamos filas anteriores)
+
+    // Borra todas las filas actuales del <tbody> para empezar desde cero.
+    // innerHTML = '' es la forma más rápida de limpiar el contenido de un elemento.
     tasksTableBody.innerHTML = '';
-    
-    // Verificamos si hay tareas para mostrar
+
+    // Si el array llegó vacío, mostramos una fila con mensaje informativo
     if (tasks.length === 0) {
-        // Si no hay tareas, mostramos un mensaje en la tabla
-        const emptyRow = document.createElement('tr');
+
+        // Creamos un elemento <tr> (fila de tabla) vacío
+        const emptyRow  = document.createElement('tr');
+
+        // Creamos un elemento <td> (celda) para el mensaje
         const emptyCell = document.createElement('td');
-        // Configuramos la celda para que ocupe todas las columnas
+
+        // colSpan = 6 hace que la celda ocupe las 6 columnas de la tabla
+        // para que el mensaje quede centrado a lo ancho
         emptyCell.colSpan = 6;
-        // Centramos el texto
+
+        // Centra el texto horizontalmente dentro de la celda
         emptyCell.style.textAlign = 'center';
-        // Asignamos el mensaje
-        emptyCell.textContent = 'No hay tareas registradas para este usuario';
-        // Agregamos la celda a la fila
+
+        // Texto que verá el usuario cuando no hay tareas
+        emptyCell.textContent = 'No hay tareas registradas';
+
+        // Agrega la celda dentro de la fila
         emptyRow.appendChild(emptyCell);
-        // Agregamos la fila al tbody
+
+        // Agrega la fila dentro del <tbody>
         tasksTableBody.appendChild(emptyRow);
+
     } else {
-        // Si hay tareas, recorremos el array y creamos una fila por cada tarea
+
+        // Si hay tareas, recorremos cada una con forEach.
+        // 'task' es el objeto de la tarea actual, 'index' es su posición (0, 1, 2...)
         tasks.forEach((task, index) => {
-            // Creamos el elemento TR (fila de tabla)
+
+            // Creamos la fila <tr> que contendrá todas las celdas de esta tarea
             const row = document.createElement('tr');
-            
-            // Creamos la celda del número de tarea (índice + 1)
+
+            // Celda: número de fila
             const numberCell = document.createElement('td');
+            // index + 1 para que empiece en 1 en lugar de 0
             numberCell.textContent = index + 1;
             row.appendChild(numberCell);
-            
-            // Creamos la celda del título de la tarea
+
+            // Celda: título de la tarea
             const titleCell = document.createElement('td');
             titleCell.textContent = task.title;
             row.appendChild(titleCell);
-            
-            // Creamos la celda de la descripción de la tarea
+
+            // Celda: descripción de la tarea
             const descriptionCell = document.createElement('td');
             descriptionCell.textContent = task.description;
             row.appendChild(descriptionCell);
-            
-            // Creamos la celda del estado de la tarea
+
+            // Celda: estado de la tarea
             const statusCell = document.createElement('td');
             statusCell.textContent = task.status;
             row.appendChild(statusCell);
-            
-            // Creamos la celda del nombre del usuario
+
+            // Celda: nombre del usuario dueño de la tarea
             const userCell = document.createElement('td');
             userCell.textContent = task.userName;
             row.appendChild(userCell);
-            
-            // Creamos la celda de acciones (botones editar y eliminar)
+
+            // Celda: botones de acción (Editar / Eliminar)
             const actionsCell = document.createElement('td');
-            
-            // Creamos el botón de editar
+
+            // Botón "Editar"
             const editBtn = document.createElement('button');
-            editBtn.textContent = 'Editar';
-            editBtn.className = 'btn-edit';
-            // Agregamos evento click que llamará a la función de edición con el ID de la tarea
+            editBtn.textContent = 'Editar';           // Texto visible del botón
+            editBtn.className = 'btn-edit';          // Clase CSS para estilos
+            // Al hacer click llama a startEditTask pasando el id de esta tarea.
+            // Se usa arrow function para capturar task.id en el momento correcto.
             editBtn.onclick = () => startEditTask(task.id);
-            
-            // Creamos el botón de eliminar
+
+            // Botón "Eliminar"
             const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'Eliminar';
-            deleteBtn.className = 'btn-delete';
-            // Agregamos evento click que llamará a la función de confirmación de eliminación
+            deleteBtn.textContent = 'Eliminar';        // Texto visible del botón
+            deleteBtn.className = 'btn-delete';      // Clase CSS para estilos
+            // Al hacer click llama a confirmDeleteTask pasando el id de esta tarea
             deleteBtn.onclick = () => confirmDeleteTask(task.id);
-            
-            // Agregamos ambos botones a la celda de acciones
+
+            // Agrega ambos botones dentro de la celda de acciones
             actionsCell.appendChild(editBtn);
             actionsCell.appendChild(deleteBtn);
-            
-            // Agregamos la celda de acciones a la fila
+
+            // Agrega la celda de acciones a la fila
             row.appendChild(actionsCell);
-            
-            // Agregamos la fila completa al tbody de la tabla
+
+            // Agrega la fila completa al <tbody> de la tabla
             tasksTableBody.appendChild(row);
         });
     }
-    
-    // Hacemos visible la sección de tareas
+
+    // Hace visible la sección de la tabla (estaba oculta hasta que hay datos que mostrar)
     tasksListSection.style.display = 'block';
 }
 
-// Función para preparar el formulario de edición con los datos de una tarea
-// Parámetro: taskId - ID de la tarea a editar
-async function startEditTask(taskId) {
-    // Buscamos la tarea en el acumulado global usando el ID
+// Función que llena el formulario de edición con los datos de la tarea seleccionada
+function startEditTask(taskId) {
+
+    // Busca la tarea dentro del acumulado global.
+    // String(t.id) === String(taskId) convierte ambos a texto antes de comparar,
+    // evitando el bug donde un ID número (1) no iguala a un ID string ("1").
     const task = allTasks.find(t => String(t.id) === String(taskId));
-    
-    // Verificamos que la tarea existe
+
+    // Si por algún motivo no encontró la tarea, muestra error y sale de la función
     if (!task) {
         showErrorMessage('Tarea no encontrada');
-        return;
+        return; // 'return' sin valor detiene la ejecución de la función aquí
     }
-    
-    // Guardamos el ID de la tarea en el campo oculto del formulario de edición
+
+    // Pone el ID de la tarea en el campo oculto del formulario.
+    // Lo necesitamos guardado para saber qué tarea actualizar cuando se haga submit.
     editTaskIdInput.value = task.id;
-    // Cargamos el título actual en el input de edición
+
+    // Carga el título actual en el input de edición para que el usuario lo vea y pueda cambiarlo
     editTaskTitleInput.value = task.title;
-    // Cargamos la descripción actual en el textarea de edición
+
+    // Carga la descripción actual en el textarea de edición
     editTaskDescriptionInput.value = task.description;
-    // Seleccionamos el estado actual en el select de edición
+
+    // Selecciona la opción del <select> que coincide con el estado actual de la tarea
     editTaskStatusSelect.value = task.status;
-    
-    // Ocultamos el formulario de creación de tareas
+
+    // Oculta el formulario de creación para no tener dos formularios visibles a la vez
     createTaskSection.style.display = 'none';
-    // Mostramos el formulario de edición de tareas
+
+    // Muestra el formulario de edición
     editTaskSection.style.display = 'block';
-    
-    // Hacemos scroll hasta el formulario de edición para que el usuario lo vea
+
+    // Hace scroll suave hasta el formulario de edición para que el usuario lo vea.
+    // 'smooth' es una animación de desplazamiento fluida (vs 'auto' que salta directo).
     editTaskSection.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Función para cancelar la edición y volver al formulario de creación
+// Función que cancela la edición y devuelve la vista al estado normal
 function cancelEdit() {
-    // Limpiamos todos los campos del formulario de edición
+
+    // Limpia el campo oculto del ID (para que no quede un ID "sucio" de una edición anterior)
     editTaskIdInput.value = '';
+
+    // Limpia el input de título
     editTaskTitleInput.value = '';
+
+    // Limpia el textarea de descripción
     editTaskDescriptionInput.value = '';
+
+    // Reinicia el <select> de estado a su valor vacío/por defecto
     editTaskStatusSelect.value = '';
-    
-    // Ocultamos el formulario de edición
+
+    // Oculta el formulario de edición
     editTaskSection.style.display = 'none';
-    // Mostramos el formulario de creación
+
+    // Vuelve a mostrar el formulario de creación
     createTaskSection.style.display = 'block';
 }
 
-// Función para confirmar la eliminación de una tarea
-// Parámetro: taskId - ID de la tarea a eliminar
+// Función asíncrona que carga las tareas del usuario actual desde la API
+// y las acumula en allTasks sin borrar las de otros usuarios
+async function loadUserTasks() {
+
+    // Si no hay usuario activo no hacemos nada. 'return' sale de la función.
+    if (!currentUser) return;
+
+    // Llama a la función importada getUserTasks (del módulo read.js via barril.js).
+    // 'await' pausa aquí hasta que la promesa resuelva y devuelva el array de tareas.
+    const tasks  = await getUserTasks(currentUser.documento);
+
+    // Reemplaza el array de tareas del usuario actual con el resultado fresco de la API
+    currentTasks = tasks;
+
+    // Recorre cada tarea recién obtenida de la API
+    tasks.forEach(task => {
+
+        // Solo agrega la tarea al acumulado si su ID no existe ya en allTasks.
+        // allTasks.find(...) retorna el objeto si lo encuentra, o undefined si no.
+        // El ! invierte el resultado: entra al if solo si NO lo encontró (es undefined).
+        if (!allTasks.find(t => t.id === task.id)) {
+            allTasks.push(task); // push agrega el elemento al final del array
+        }
+    });
+
+    // Renderiza la tabla con TODAS las tareas acumuladas (no solo las del usuario actual)
+    displayTasks(allTasks);
+}
+
+
+// SECCIÓN 5: MANEJADORES DE EVENTOS
+
+// Son funciones 'async' porque dentro hacen llamadas a la API con 'await'.
+
+// Se ejecuta cuando el usuario envía el formulario de búsqueda de usuario
+async function handleSearchUser(e) {
+
+    // e.preventDefault() evita que el formulario recargue la página al hacer submit,
+    // que es el comportamiento por defecto del navegador con los <form>.
+    e.preventDefault();
+
+    // .trim() elimina espacios en blanco al inicio y al final del texto escrito
+    const documento = documentNumberInput.value.trim();
+
+    // Si el campo quedó vacío después del trim(), pedimos que lo llene y salimos
+    if (!documento) {
+        showErrorMessage('Por favor ingresa un número de documento');
+        return;
+    }
+
+    // Llama a la API para buscar el usuario. 'await' espera el resultado.
+    // Retorna un objeto usuario o null si no existe.
+    const user = await searchUserByDocument(documento);
+
+    // Si encontró al usuario (user no es null ni undefined)
+    if (user) {
+
+        // Guarda el usuario en la variable global para que otras funciones lo usen
+        currentUser = user;
+
+        // Pinta los datos del usuario en la interfaz (documento, nombre, correo)
+        displayUserData(user);
+
+        // Carga y muestra las tareas de este usuario
+        await loadUserTasks();
+
+        // Muestra mensaje verde de confirmación con el nombre del usuario.
+        // Las backticks `` y ${} son template literals: permiten insertar variables en strings.
+        showSuccessMessage(`Usuario ${user.nombre} encontrado`);
+
+        // Limpia el input de búsqueda para que quede vacío después de la consulta
+        documentNumberInput.value = '';
+
+    } else {
+        // Si user es null (no se encontró), muestra mensaje de error
+        showErrorMessage('Usuario no encontrado. Verifica el documento ingresado.');
+
+        // Limpia la variable global de usuario
+        currentUser = null;
+
+        // Oculta toda la información que pudiera estar visible de una búsqueda anterior
+        hideUserData();
+    }
+}
+
+// Se ejecuta cuando el usuario envía el formulario de creación de tarea
+async function handleCreateTask(e) {
+
+    // Evita que el formulario recargue la página
+    e.preventDefault();
+
+    // Si no hay usuario activo no podemos asociar la tarea a nadie
+    if (!currentUser) {
+        showErrorMessage('Primero debes buscar un usuario');
+        return;
+    }
+
+    // Lee y limpia cada campo del formulario de creación
+    const title = taskTitleInput.value.trim();                  // Título de la tarea
+    const description = taskDescriptionInput.value.trim();      // Descripción de la tarea
+    const status = taskStatusSelect.value;                      // Estado seleccionado en el <select>
+
+    // Valida que ningún campo esté vacío. El operador ! convierte string vacío a true.
+    if (!title || !description || !status) {
+        showErrorMessage('Por favor completa todos los campos de la tarea');
+        return;
+    }
+
+    // Construye el objeto que se enviará al servidor.
+    // La notación { title } es shorthand de { title: title } cuando variable y clave tienen el mismo nombre.
+    const taskData = {
+        title,                                // Título de la tarea
+        description,                          // Descripción de la tarea
+        status,                               // Estado de la tarea
+        userDocumento: currentUser.documento, // Documento del usuario dueño de la tarea
+        userName:      currentUser.nombre     // Nombre del usuario (para mostrarlo en la tabla)
+    };
+
+    // Envía la tarea a la API vía POST. 'await' espera la respuesta.
+    // Retorna el objeto de la tarea creada (con su ID asignado por el servidor) o null si falló.
+    const createdTask = await createTask(taskData);
+
+    // Si la creación fue exitosa (createdTask no es null)
+    if (createdTask) {
+
+        // Agrega la nueva tarea al final del acumulado global
+        allTasks.push(createdTask);
+
+        // También la agrega al array del usuario actual
+        currentTasks.push(createdTask);
+
+        // Muestra mensaje verde de confirmación
+        showSuccessMessage('Tarea registrada exitosamente');
+
+        // .reset() limpia todos los campos del formulario de creación de golpe
+        createTaskForm.reset();
+
+        // Actualiza la tabla para mostrar la nueva tarea
+        displayTasks(allTasks);
+    }
+}
+
+// Se ejecuta cuando el usuario envía el formulario de edición de tarea
+async function handleEditTask(e) {
+
+    // Evita que el formulario recargue la página
+    e.preventDefault();
+
+    // Lee el ID del campo oculto y lo convierte a número entero con parseInt.
+    // El campo oculto fue llenado por startEditTask() al hacer click en "Editar".
+    const taskId = parseInt(editTaskIdInput.value);
+
+    // isNaN() retorna true si el valor NO es un número (Not a Number).
+    // Esto ocurre si el campo oculto estaba vacío y parseInt devolvió NaN.
+    if (isNaN(taskId)) {
+        showErrorMessage('No se pudo identificar la tarea a editar');
+        return;
+    }
+
+    // Lee y limpia cada campo del formulario de edición
+    const title       = editTaskTitleInput.value.trim();
+    const description = editTaskDescriptionInput.value.trim();
+    const status      = editTaskStatusSelect.value;
+
+    // Valida que ningún campo esté vacío
+    if (!title || !description || !status) {
+        showErrorMessage('Por favor completa todos los campos de la tarea');
+        return;
+    }
+
+    // Construye el objeto con los datos actualizados de la tarea
+    const taskData = {
+        title,
+        description,
+        status,
+        userDocumento: currentUser.documento,
+        userName:      currentUser.nombre
+    };
+
+    // Envía la actualización a la API vía PUT con el ID de la tarea.
+    // Retorna el objeto de la tarea actualizada o null si falló.
+    const updatedTask = await updateTask(taskId, taskData);
+
+    // Si la actualización fue exitosa
+    if (updatedTask) {
+
+        // findIndex busca el índice (posición) en el array, retorna -1 si no lo encuentra.
+        // Usamos String() en ambos lados para evitar problemas de tipo number vs string.
+        const idx = allTasks.findIndex(t => String(t.id) === String(taskId));
+
+        // Si encontró la tarea en el acumulado (idx no es -1), la reemplaza con la versión actualizada
+        if (idx !== -1) allTasks[idx] = updatedTask;
+
+        // Hace lo mismo en el array del usuario actual
+        const idx2 = currentTasks.findIndex(t => String(t.id) === String(taskId));
+        if (idx2 !== -1) currentTasks[idx2] = updatedTask;
+
+        // Muestra mensaje verde de confirmación
+        showSuccessMessage('Tarea actualizada exitosamente');
+
+        // Limpia y oculta el formulario de edición, vuelve a mostrar el de creación
+        cancelEdit();
+
+        // Actualiza la tabla con los datos nuevos
+        displayTasks(allTasks);
+    }
+}
+
+// Se ejecuta cuando el usuario hace click en el botón "Eliminar" de una tarea
 async function confirmDeleteTask(taskId) {
-    // Buscamos la tarea en el acumulado global para obtener su título
+
+    // Busca la tarea en el acumulado global para mostrar su título en el mensaje de confirmación
     const task = allTasks.find(t => t.id === taskId);
-    
-    // Verificamos que la tarea existe
+
+    // Si no encontró la tarea (no debería pasar, pero es una buena práctica verificar)
     if (!task) {
         showErrorMessage('Tarea no encontrada');
         return;
     }
-    
-    // Mostramos un diálogo de confirmación al usuario
-    // confirm() retorna true si el usuario acepta, false si cancela
-    const confirmDelete = confirm(`¿Estás seguro de que deseas eliminar la tarea "${task.title}"?`);
-    
-    // Si el usuario confirmó la eliminación
-    if (confirmDelete) {
-        // Llamamos a la función que hace la petición DELETE a la API
+
+    // confirm() muestra un diálogo nativo del navegador con botones "Aceptar" y "Cancelar".
+    // Retorna true si el usuario hizo click en "Aceptar", false si hizo click en "Cancelar".
+    // Las template literals `` insertan el título de la tarea en el mensaje.
+    const confirmed = confirm(`¿Estás seguro de que deseas eliminar la tarea "${task.title}"?`);
+
+    // Solo procede si el usuario confirmó con "Aceptar"
+    if (confirmed) {
+
+        // Envía la petición DELETE a la API. Retorna true si fue exitosa, false si falló.
         const success = await deleteTask(taskId);
-        
-        // Si la eliminación fue exitosa
+
+        // Si la API confirmó que se eliminó correctamente
         if (success) {
-            // Eliminamos la tarea del acumulado global
-            allTasks = allTasks.filter(t => t.id !== taskId);
-            // Eliminamos la tarea del array del usuario actual
+
+            // .filter() crea un NUEVO array excluyendo la tarea eliminada.
+            // Solo conserva las tareas cuyo ID sea distinto al taskId eliminado.
+            allTasks     = allTasks.filter(t => t.id !== taskId);
+
+            // Hace lo mismo con el array del usuario actual
             currentTasks = currentTasks.filter(t => t.id !== taskId);
-            // Mostramos mensaje de éxito
+
+            // Muestra mensaje verde de confirmación
             showSuccessMessage('Tarea eliminada exitosamente');
-            // Refrescamos la tabla con el acumulado actualizado
+
+            // Actualiza la tabla para que desaparezca la fila eliminada
             displayTasks(allTasks);
         }
     }
 }
 
-// Función para cargar y mostrar las tareas del usuario actual
-async function loadUserTasks() {
-    // Verificamos que hay un usuario seleccionado
-    if (!currentUser) {
-        return;
-    }
-    
-    // Obtenemos las tareas del usuario desde la API
-    const tasks = await getUserTasks(currentUser.documento);
-    // Guardamos las tareas del usuario actual en la variable global
-    currentTasks = tasks;
 
-    // Agregamos las tareas nuevas al acumulado global, evitando duplicados por ID
-    tasks.forEach(task => {
-        if (!allTasks.find(t => t.id === task.id)) {
-            allTasks.push(task);
-        }
-    });
+// SECCIÓN 6: INICIALIZACIÓN DE LA APLICACIÓN
 
-    // Mostramos todas las tareas acumuladas en la tabla
-    displayTasks(allTasks);
-}
-
-// 8. MANEJADORES DE EVENTOS (EVENT HANDLERS)
-// Manejador del evento submit del formulario de búsqueda de usuario
-// Parámetro: e - Objeto del evento
-async function handleSearchUser(e) {
-    // Prevenimos el comportamiento por defecto del formulario (recargar la página)
-    e.preventDefault();
-    
-    // Obtenemos el valor del input de documento y eliminamos espacios
-    const documento = documentNumberInput.value.trim();
-    
-    // Validamos que el documento no esté vacío
-    if (!documento) {
-        showErrorMessage('Por favor ingresa un número de documento');
-        return;
-    }
-    
-    // Buscamos el usuario en la API
-    const user = await searchUserByDocument(documento);
-    
-    // Verificamos si se encontró el usuario
-    if (user) {
-        // Guardamos el usuario en la variable global
-        currentUser = user;
-        // Mostramos los datos del usuario en la interfaz
-        displayUserData(user);
-        // Cargamos las tareas del usuario
-        await loadUserTasks();
-        // Mostramos mensaje de éxito
-        showSuccessMessage(`Usuario ${user.nombre} encontrado`);
-        // Limpiamos el campo de búsqueda
-        documentNumberInput.value = '';
-    } else {
-        // Si no se encontró, mostramos error y limpiamos la interfaz
-        showErrorMessage('Usuario no encontrado. Verifica el documento ingresado.');
-        currentUser = null;
-        hideUserData();
-    }
-}
-
-// Manejador del evento submit del formulario de creación de tareas
-// Parámetro: e - Objeto del evento
-async function handleCreateTask(e) {
-    // Prevenimos el comportamiento por defecto del formulario
-    e.preventDefault();
-    
-    // Verificamos que hay un usuario seleccionado
-    if (!currentUser) {
-        showErrorMessage('Primero debes buscar un usuario');
-        return;
-    }
-    
-    // Obtenemos y limpiamos los valores de los campos
-    const title = taskTitleInput.value.trim();
-    const description = taskDescriptionInput.value.trim();
-    const status = taskStatusSelect.value;
-    
-    // Validamos que todos los campos estén completos
-    if (!title || !description || !status) {
-        showErrorMessage('Por favor completa todos los campos de la tarea');
-        return;
-    }
-    
-    // Construimos el objeto con los datos de la nueva tarea
-    const taskData = {
-        title: title,
-        description: description,
-        status: status,
-        userDocumento: currentUser.documento,
-        userName: currentUser.nombre
-    };
-    
-    // Enviamos la tarea a la API para crearla
-    const createdTask = await createTask(taskData);
-    
-    // Verificamos si la creación fue exitosa
-    if (createdTask) {
-        // Agregamos la nueva tarea al acumulado global y al array del usuario actual
-        allTasks.push(createdTask);
-        currentTasks.push(createdTask);
-        // Mostramos mensaje de éxito
-        showSuccessMessage('Tarea registrada exitosamente');
-        // Limpiamos el formulario
-        createTaskForm.reset();
-        // Refrescamos la tabla con el acumulado actualizado
-        displayTasks(allTasks);
-    }
-}
-
-// Manejador del evento submit del formulario de edición de tareas
-// Parámetro: e - Objeto del evento
-async function handleEditTask(e) {
-    // Prevenimos el comportamiento por defecto del formulario
-    e.preventDefault();
-    
-    // Obtenemos el ID de la tarea a editar desde el campo oculto
-    const taskId = parseInt(editTaskIdInput.value);
-    // Obtenemos y limpiamos los valores de los campos
-    const title = editTaskTitleInput.value.trim();
-    const description = editTaskDescriptionInput.value.trim();
-    const status = editTaskStatusSelect.value;
-    
-    // Validamos que todos los campos estén completos
-    if (!title || !description || !status) {
-        showErrorMessage('Por favor completa todos los campos de la tarea');
-        return;
-    }
-    
-    // Construimos el objeto con los datos actualizados de la tarea
-    const taskData = {
-        title: title,
-        description: description,
-        status: status,
-        userDocumento: currentUser.documento,
-        userName: currentUser.nombre
-    };
-    
-    // Enviamos la actualización a la API
-    const updatedTask = await updateTask(taskId, taskData);
-    
-    // Verificamos si la actualización fue exitosa
-    if (updatedTask) {
-        // Actualizamos la tarea en el acumulado global
-        const idx = allTasks.findIndex(t => String(t.id) === String(taskId));
-        if (idx !== -1) allTasks[idx] = updatedTask;
-        // Actualizamos también en el array del usuario actual
-        const idx2 = currentTasks.findIndex(t => String(t.id) === String(taskId));
-        if (idx2 !== -1) currentTasks[idx2] = updatedTask;
-        // Mostramos mensaje de éxito
-        showSuccessMessage('Tarea actualizada exitosamente');
-        // Cancelamos el modo de edición (limpia el formulario y lo oculta)
-        cancelEdit();
-        // Refrescamos la tabla con el acumulado actualizado
-        displayTasks(allTasks);
-    }
-}
-
-// 9. INICIALIZACIÓN DE LA APLICACIÓN
-// Función que se ejecuta cuando el DOM está completamente cargado
+// Función que registra todos los eventos y arranca la app
 function initApp() {
-    // Agregamos el event listener al formulario de búsqueda de usuario
-    // 'submit' se dispara cuando el usuario envía el formulario
+
+    // .addEventListener(evento, función) "escucha" el evento en el elemento
+    // y ejecuta la función cada vez que ocurre.
+
+    // Escucha el evento 'submit' en el formulario de búsqueda (cuando se presiona el botón Buscar)
     searchUserForm.addEventListener('submit', handleSearchUser);
-    
-    // Agregamos el event listener al formulario de creación de tareas
+
+    // Escucha el evento 'submit' en el formulario de crear tarea
     createTaskForm.addEventListener('submit', handleCreateTask);
-    
-    // Agregamos el event listener al formulario de edición de tareas
+
+    // Escucha el evento 'submit' en el formulario de editar tarea
     editTaskForm.addEventListener('submit', handleEditTask);
-    
-    // Agregamos el event listener al botón de cancelar edición
+
+    // Escucha el evento 'click' en el botón Cancelar del formulario de edición
     cancelEditBtn.addEventListener('click', cancelEdit);
-    
-    // Mostramos mensaje en consola indicando que la app está lista
+
+    // Mensajes en consola del navegador para verificar que todo cargó bien
     console.log('✅ Sistema de Gestión de Tareas iniciado correctamente');
-    console.log('📡 API URL:', API_URL);
+    console.log('📡 Servidor: http://localhost:3000');
     console.log('🔧 Asegúrate de que json-server esté corriendo en el puerto 3000');
 }
 
-// Esperamos a que el DOM esté completamente cargado antes de inicializar
-// DOMContentLoaded se dispara cuando todo el HTML ha sido parseado
+// 'DOMContentLoaded' se dispara cuando el navegador terminó de leer y construir todo el HTML.
+// Le decimos que CUANDO ese evento ocurra, ejecute initApp().
+// Esto garantiza que todos los elementos del DOM (getElementById) ya existen
+// antes de intentar seleccionarlos, evitando errores de "null".
 document.addEventListener('DOMContentLoaded', initApp);
