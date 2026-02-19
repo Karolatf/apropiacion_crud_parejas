@@ -1,11 +1,8 @@
-// script.js
-// SISTEMA DE GESTIÓN DE TAREAS - CRUD COMPLETO
 // Autores: Karol Nicolle Torres Fuentes, Juan Sebastian Patiño Hernandez
 // Fecha: 17-02-2026
-// Institución: SENA - Técnico en Programación de Software
 // Descripción: Punto de entrada principal. Importa todos los módulos desde el barril.
 
-// SECCIÓN 0: IMPORTACIONES (ES Modules)
+// IMPORTACIONES (Modulos)
 
 // 'import' es la palabra clave de ES Modules para traer funciones desde otro archivo.
 import {
@@ -34,11 +31,10 @@ import {
 
 // SECCIÓN 1: SELECCIÓN DE ELEMENTOS DEL DOM
 
-// document.getElementById('id') busca en el HTML el elemento que tenga ese id=""
-// y lo guarda en una constante para poder manipularlo después con JavaScript.
+// document.getElementById('id') busca en el HTML el elemento que tenga ese id="" y lo guarda en una constante para poder manipularlo después con JavaScript.
 // Se usa 'const' porque estos elementos no cambian (siempre apuntan al mismo nodo del DOM).
 
-// Formulario de búsqueda de usuario 
+// -Formulario de búsqueda de usuario 
 
 // El formulario completo con el botón "Buscar usuario"
 const searchUserForm = document.getElementById('searchUserForm');
@@ -46,7 +42,7 @@ const searchUserForm = document.getElementById('searchUserForm');
 // El campo <input> donde el usuario escribe el número de documento
 const documentNumberInput = document.getElementById('documentNumber');
 
-// Sección de datos del usuario
+// -Sección de datos del usuario
 
 // El <div> o <section> que contiene la tarjeta con los datos del usuario encontrado
 const userDataSection = document.getElementById('userDataSection');
@@ -60,7 +56,7 @@ const userNameSpan = document.getElementById('userName');
 // <span> donde se muestra el correo electrónico del usuario
 const userEmailSpan = document.getElementById('userEmail');
 
-// Formulario de creación de tareas
+// -Formulario de creación de tareas
 
 // El <div> o <section> que envuelve todo el formulario de crear tarea
 const createTaskSection = document.getElementById('createTaskSection');
@@ -77,7 +73,7 @@ const taskDescriptionInput = document.getElementById('taskDescription');
 // <select> con las opciones de estado (ej: pendiente, en progreso, completada)
 const taskStatusSelect = document.getElementById('taskStatus');
 
-// Formulario de edición de tareas
+// -Formulario de edición de tareas
 
 // El <div> o <section> que envuelve todo el formulario de editar tarea
 const editTaskSection = document.getElementById('editTaskSection');
@@ -101,7 +97,7 @@ const editTaskStatusSelect = document.getElementById('editTaskStatus');
 // Botón "Cancelar" dentro del formulario de edición
 const cancelEditBtn = document.getElementById('cancelEdit');
 
-// Sección de lista de tareas
+// -Sección de lista de tareas
 
 // El <div> o <section> que contiene la tabla con todas las tareas
 const tasksListSection = document.getElementById('tasksListSection');
@@ -113,8 +109,7 @@ const tasksTableBody = document.getElementById('tasksTableBody');
 // SECCIÓN 2: VARIABLES GLOBALES DE ESTADO
 
 // Se usa 'let' (no 'const') porque estos valores cambian durante el uso de la app.
-// Son "globales" porque están fuera de cualquier función,
-// lo que permite que todas las funciones del archivo las lean y modifiquen.
+// Son "globales" porque están fuera de cualquier función, lo que permite que todas las funciones del archivo las lean y modifiquen.
 
 // Almacena el objeto del usuario que se está consultando en este momento.
 // Empieza en null (ningún usuario seleccionado).
@@ -125,8 +120,7 @@ let currentUser  = null;
 let currentTasks = [];
 
 // Array ACUMULADO con tareas de TODOS los usuarios consultados en la sesión.
-// A diferencia de currentTasks, este nunca se vacía al cambiar de usuario;
-// solo crece cuando se consulta un usuario nuevo, y se reduce cuando se elimina una tarea.
+// A diferencia de currentTasks, este nunca se vacía al cambiar de usuario; solo crece cuando se consulta un usuario nuevo, y se reduce cuando se elimina una tarea.
 let allTasks = [];
 
 
@@ -284,8 +278,7 @@ function displayTasks(tasks) {
 function startEditTask(taskId) {
 
     // Busca la tarea dentro del acumulado global.
-    // String(t.id) === String(taskId) convierte ambos a texto antes de comparar,
-    // evitando el bug donde un ID número (1) no iguala a un ID string ("1").
+    // String(t.id) === String(taskId) convierte ambos a texto antes de comparar, evitando el bug donde un ID número (1) no iguala a un ID string ("1").
     const task = allTasks.find(t => String(t.id) === String(taskId));
 
     // Si por algún motivo no encontró la tarea, muestra error y sale de la función
@@ -340,8 +333,7 @@ function cancelEdit() {
     createTaskSection.style.display = 'block';
 }
 
-// Función asíncrona que carga las tareas del usuario actual desde la API
-// y las acumula en allTasks sin borrar las de otros usuarios
+// Función asíncrona que carga las tareas del usuario actual desde la API y las acumula en allTasks sin borrar las de otros usuarios
 async function loadUserTasks() {
 
     // Si no hay usuario activo no hacemos nada. 'return' sale de la función.
@@ -377,8 +369,7 @@ async function loadUserTasks() {
 // Se ejecuta cuando el usuario envía el formulario de búsqueda de usuario
 async function handleSearchUser(e) {
 
-    // e.preventDefault() evita que el formulario recargue la página al hacer submit,
-    // que es el comportamiento por defecto del navegador con los <form>.
+    // e.preventDefault() evita que el formulario recargue la página al hacer submit, que es el comportamiento por defecto del navegador con los <form>.
     e.preventDefault();
 
     // .trim() elimina espacios en blanco al inicio y al final del texto escrito
@@ -455,7 +446,7 @@ async function handleCreateTask(e) {
         description,                          // Descripción de la tarea
         status,                               // Estado de la tarea
         userDocumento: currentUser.documento, // Documento del usuario dueño de la tarea
-        userName:      currentUser.nombre     // Nombre del usuario (para mostrarlo en la tabla)
+        userName: currentUser.nombre          // Nombre del usuario (para mostrarlo en la tabla)
     };
 
     // Envía la tarea a la API vía POST. 'await' espera la respuesta.
@@ -500,9 +491,9 @@ async function handleEditTask(e) {
     }
 
     // Lee y limpia cada campo del formulario de edición
-    const title       = editTaskTitleInput.value.trim();
+    const title = editTaskTitleInput.value.trim();
     const description = editTaskDescriptionInput.value.trim();
-    const status      = editTaskStatusSelect.value;
+    const status = editTaskStatusSelect.value;
 
     // Valida que ningún campo esté vacío
     if (!title || !description || !status) {
@@ -516,7 +507,7 @@ async function handleEditTask(e) {
         description,
         status,
         userDocumento: currentUser.documento,
-        userName:      currentUser.nombre
+        userName: currentUser.nombre
     };
 
     // Envía la actualización a la API vía PUT con el ID de la tarea.
@@ -562,7 +553,7 @@ async function confirmDeleteTask(taskId) {
 
     // confirm() muestra un diálogo nativo del navegador con botones "Aceptar" y "Cancelar".
     // Retorna true si el usuario hizo click en "Aceptar", false si hizo click en "Cancelar".
-    // Las template literals `` insertan el título de la tarea en el mensaje.
+    // Las backteas `` insertan el título de la tarea en el mensaje.
     const confirmed = confirm(`¿Estás seguro de que deseas eliminar la tarea "${task.title}"?`);
 
     // Solo procede si el usuario confirmó con "Aceptar"
@@ -576,7 +567,7 @@ async function confirmDeleteTask(taskId) {
 
             // .filter() crea un NUEVO array excluyendo la tarea eliminada.
             // Solo conserva las tareas cuyo ID sea distinto al taskId eliminado.
-            allTasks     = allTasks.filter(t => t.id !== taskId);
+            allTasks = allTasks.filter(t => t.id !== taskId);
 
             // Hace lo mismo con el array del usuario actual
             currentTasks = currentTasks.filter(t => t.id !== taskId);
@@ -596,8 +587,7 @@ async function confirmDeleteTask(taskId) {
 // Función que registra todos los eventos y arranca la app
 function initApp() {
 
-    // .addEventListener(evento, función) "escucha" el evento en el elemento
-    // y ejecuta la función cada vez que ocurre.
+    // .addEventListener(evento, función) "escucha" el evento en el elemento y ejecuta la función cada vez que ocurre.
 
     // Escucha el evento 'submit' en el formulario de búsqueda (cuando se presiona el botón Buscar)
     searchUserForm.addEventListener('submit', handleSearchUser);
@@ -612,13 +602,12 @@ function initApp() {
     cancelEditBtn.addEventListener('click', cancelEdit);
 
     // Mensajes en consola del navegador para verificar que todo cargó bien
-    console.log('✅ Sistema de Gestión de Tareas iniciado correctamente');
-    console.log('📡 Servidor: http://localhost:3000');
-    console.log('🔧 Asegúrate de que json-server esté corriendo en el puerto 3000');
+    console.log(' Sistema de Gestión de Tareas iniciado correctamente');
+    console.log(' Servidor: http://localhost:3000');
+    console.log(' Asegúrate de que json-server esté corriendo en el puerto 3000');
 }
 
-// 'DOMContentLoaded' se dispara cuando el navegador terminó de leer y construir todo el HTML.
+// 'DOMContentLoaded' se inicia cuando el navegador terminó de leer y construir todo el HTML.
 // Le decimos que CUANDO ese evento ocurra, ejecute initApp().
-// Esto garantiza que todos los elementos del DOM (getElementById) ya existen
-// antes de intentar seleccionarlos, evitando errores de "null".
+// Esto garantiza que todos los elementos del DOM (getElementById) ya existen antes de intentar seleccionarlos, evitando errores de "null".
 document.addEventListener('DOMContentLoaded', initApp);

@@ -1,8 +1,3 @@
-// modulos/utils.js
-// SISTEMA DE GESTIÓN DE TAREAS - CRUD COMPLETO
-// Autores: Karol Nicolle Torres Fuentes, Juan Sebastian Patiño Hernandez
-// Fecha: 17-02-2026
-// Institución: SENA - Técnico en Programación de Software
 // Módulo: Funciones de utilidad (mensajes de éxito y error)
 
 // Seleccionamos el elemento div donde mostraremos mensajes de éxito o error

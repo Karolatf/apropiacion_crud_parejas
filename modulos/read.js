@@ -1,8 +1,3 @@
-// modulos/read.js
-// SISTEMA DE GESTIÓN DE TAREAS - CRUD COMPLETO
-// Autores: Karol Nicolle Torres Fuentes, Juan Sebastian Patiño Hernandez
-// Fecha: 17-02-2026
-// Institución: SENA - Técnico en Programación de Software
 // Módulo: Operaciones de lectura (READ) - GET de usuarios y tareas
 
 import { API_URL } from './config.js';

@@ -8,7 +8,7 @@
 /* Estilos del body */
 body {
     font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #a8e6cf 0%, #dcedc1 50%, #ffd3b6 100%);
+    background: linear-gradient(135deg, #a8e6e4 0%, #cdf1eb74 50%, #de95fd 100%);
     min-height: 100vh;
     padding: 20px;
 }
@@ -22,7 +22,7 @@ body {
 /* Encabezado */
 header {
     text-align: center;
-    color: #2c3e50;
+    color: #e97d65;
     margin-bottom: 30px;
     background: white;
     padding: 30px;
@@ -34,13 +34,13 @@ header {
 header h1 {
     font-size: 2.5em;
     margin-bottom: 10px;
-    color: #4a90e2;
+    color: #6ea9bc;
 }
 
 /* Párrafo del encabezado */
 header p {
     font-size: 1.1em;
-    color: #7f8c8d;
+    color: #6c797a;
 }
 
 /* Tarjetas contenedoras */
@@ -49,15 +49,15 @@ header p {
     border-radius: 10px;
     padding: 25px;
     margin-bottom: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(255, 9, 9, 0.1);
 }
 
 /* Títulos de las tarjetas */
 .card h2 {
-    color: #4a90e2;
+    color: #e97d65;  
     margin-bottom: 20px;
     font-size: 1.5em;
-    border-bottom: 2px solid #a8e6cf;
+    /* border-bottom: 2px solid #881c1c; */
     padding-bottom: 10px;
 }
 
@@ -70,7 +70,7 @@ header p {
 label {
     display: block;
     margin-bottom: 5px;
-    color: #2c3e50;
+    color:  #6ea9bc;
     font-weight: bold;
     font-size: 14px;
 }
@@ -80,7 +80,7 @@ input[type="text"],
 input[type="number"] {
     width: 100%;
     padding: 10px;
-    border: 1px solid #a8e6cf;
+    border: 1px solid #6ea9bc;
     border-radius: 5px;
     font-size: 14px;
     transition: border-color 0.3s;
@@ -92,14 +92,14 @@ input[type="number"]:focus,
 textarea:focus,
 select:focus {
     outline: none;
-    border-color: #4a90e2;
+    border-color: #e97d65;
 }
 
 /* Textarea */
 textarea {
     width: 100%;
     padding: 10px;
-    border: 1px solid #a8e6cf;
+    border: 1px solid #6ea9bc;
     border-radius: 5px;
     font-size: 14px;
     resize: vertical;
@@ -111,11 +111,12 @@ textarea {
 select {
     width: 100%;
     padding: 10px;
-    border: 1px solid #a8e6cf;
+    border: 1px solid #6ea9bc;
     border-radius: 5px;
     font-size: 14px;
     background: white;
     cursor: pointer;
+    color: #6c797a;
 }
 
 /* Botones en general */
@@ -137,7 +138,7 @@ button:hover {
 
 /* Botón primario */
 .btn-primary {
-    background: #4a90e2;
+    background:#6ea9bc;
     color: white;
 }
 
@@ -150,8 +151,8 @@ button:hover {
 
 /* Botón de editar */
 .btn-edit {
-    background: #a8e6cf;
-    color: #2c3e50;
+    background:  #81a6b2;
+    color: #ffffff;
     margin-right: 5px;
     padding: 8px 15px;
     font-size: 12px;
@@ -159,18 +160,35 @@ button:hover {
 
 /* Botón de eliminar */
 .btn-delete {
-    background: #ffaaa5;
+    background: #f58e8e;
     color: white;
     padding: 8px 15px;
     font-size: 12px;
 }
 
+/* Hover pastel más clarito para botones */
+.btn-primary:hover {
+    background: #56797f;
+}
+
+.btn-secondary:hover {
+    background: #b0bdbe;
+}
+
+.btn-edit:hover {
+    background: #56797f;
+}
+
+.btn-delete:hover {
+    background: #f7a6a6;
+}
+
 /* Información del usuario */
 .user-info {
-    background: #f0f8ff;
+    background: #f4faf7;
     padding: 15px;
     border-radius: 5px;
-    border-left: 4px solid #4a90e2;
+    border-left: 4px solid #6ea9bc;
 }
 
 /* Fila de información */
@@ -181,12 +199,13 @@ button:hover {
     padding: 8px;
     background: white;
     border-radius: 5px;
+    color: #6c797a;;
 }
 
 /* Etiqueta de información */
 .info-label {
     font-weight: bold;
-    color: #4a90e2;
+    color: #6ea9bc;
 }
 
 /* Tabla */
@@ -198,8 +217,8 @@ table {
 
 /* Encabezado de la tabla */
 table thead {
-    background: #4a90e2;
-    color: white;
+    background:  #6ea9bc;
+    color: rgb(255, 255, 255);
 }
 
 /* Celdas de encabezado y datos */
@@ -207,7 +226,16 @@ table th,
 table td {
     padding: 12px;
     text-align: left;
-    border-bottom: 1px solid #dcedc1;
+    border-bottom: 1px solid #c1eced;
+}
+
+/* Color separado para encabezados y celdas (evita cascada incorrecta) */
+table th {
+    color: #ffffff;
+}
+
+table td {
+    color: #6c797a;
 }
 
 /* Alineación de la columna de acciones */
@@ -264,5 +292,5 @@ footer p {
 /* Primera línea del footer en negrita */
 footer p:first-child {
     font-weight: bold;
-    color: #4a90e2;
+    color: #e97d65;
 }
