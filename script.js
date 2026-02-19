@@ -479,13 +479,15 @@ async function handleEditTask(e) {
     // Evita que el formulario recargue la página
     e.preventDefault();
 
-    // Lee el ID del campo oculto y lo convierte a número entero con parseInt.
-    // El campo oculto fue llenado por startEditTask() al hacer click en "Editar".
-    const taskId = parseInt(editTaskIdInput.value);
+    // Lee el ID del campo oculto como texto plano (string).
+    // .trim() elimina espacios en blanco accidentales al inicio o al final.
+    // No usamos parseInt() porque json-server genera IDs alfanuméricos como "be1b",
+    // y parseInt("be1b") devuelve NaN, lo que causaba el error al editar.
+    const taskId = editTaskIdInput.value.trim();
 
-    // isNaN() retorna true si el valor NO es un número (Not a Number).
-    // Esto ocurre si el campo oculto estaba vacío y parseInt devolvió NaN.
-    if (isNaN(taskId)) {
+    // Si el campo oculto está vacío, significa que ninguna tarea fue seleccionada
+    // para editar, por lo que mostramos error y detenemos la ejecución con return.
+    if (!taskId) {
         showErrorMessage('No se pudo identificar la tarea a editar');
         return;
     }
